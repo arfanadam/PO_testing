@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Order Form</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            padding: 20px;
+            margin: 0;
+            color: #333;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px; /* Adjust margin below headers */
+        }
+
+        .form-container {
+            background: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin: 20px auto; /* Center the form with top and bottom margin */
+            max-width: 600px;
+        }
+
+        .form-item {
+            margin-bottom: 15px; /* Space between items */
+            padding: 10px;
+            border: 1px solid #e1e1e1;
+            border-radius: 5px;
+            background-color: #e8f5e9; /* Light green background */
+        }
+
+        button {
+            margin-top: 10px; /* Space above the button */
+            margin-bottom: 10px; /* Space below the button */
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        .button-remove {
+            background-color: #e74c3c; /* Red color for remove button */
+            color: white; /* White text */
+        }
+
+        .button-PDF {
+            background-color: #2ec736; /* Red color for remove button */
+            color: white; /* White text */
+        }
+
+        .error {
+            color: red;
+            display: none;
+            margin: 10px 0; /* Space around the error message */
+        }
+
+        .total-price {
+            font-weight: bold;
+        }
+
+        /* Adjust margins for responsive design */
+        @media (max-width: 600px) {
+            .form-container {
+                margin: 10px; /* Reduce margin for mobile view */
+                padding: 15px;
+            }
+            
+            label {
+                margin-bottom: 3px; /* Adjust label margin for mobile */
+            }
+
+            input[type="text"],
+            input[type="number"] {
+                padding: 8px; /* Adjust padding for mobile */
+                margin-bottom: 8px; /* Less space below inputs */
+            }
+        }
+
+        label {
+            display: inline-block; /* Keep labels inline but add space */
+            margin-bottom: 4px; /* Less margin below labels */
+            font-weight: bold; /* Optional: make labels bold for better visibility */
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 97%; /* Ensure inputs take full width */
+            padding: 6px; /* Adjust padding for a more compact look */
+            margin-bottom: 10px; /* Less space below each input */
+            border: 1px solid #ccc; /* Optional: border for inputs */
+            border-radius: 4px; /* Optional: rounded corners for inputs */
+        }
+
+
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h1>Purchase Order Form V1.1</h1>
+        <form id="dataForm">
+            <label for="POName">PO Title: (required)</label><br>
+            <input type="text" id="POName" name="POName" required><br><br>
+
+            <label for="VendorName">Vendor Name: (required)</label><br>
+            <input type="text" id="VendorName" name="VendorName" required><br><br>
+
+            <label for="VendorPhone">Vendor Phone: (required)</label><br>
+            <input type="text" id="VendorPhone" name="VendorPhone" required><br><br>
+
+            <label for="VendorFax">Vendor FAX:</label><br>
+            <input type="text" id="VendorFax" name="VendorFax" required><br><br>
+
+            <label for="VendorEmail">Vendor Email:</label><br>
+            <input type="text" id="VendorEmail" name="VendorEmail" required onblur="if (!validateEmail(this.value)) alert('Invalid email format.')">
+
+            <label for="address1">Vendor Address 1: (required)</label><br>
+            <input type="text" id="address1" name="address1" required><br><br>
+
+            <label for="address2">Vendor Address 2:</label><br>
+            <input type="text" id="address2" name="address2"><br><br>
+
+            <label for="address3">Vendor Address 3:</label><br>
+            <input type="text" id="address3" name="address3"><br><br>
+
+            <label for="serialnum">Serial No.:</label><br>
+            <input type="text" id="serialnum" name="serialnum"><br><br>
+
+            <label for="datePO">Date (DD/MM/YYYY):</label><br>
+            <input type="text" id="datePO" name="datePO" onblur="validateDate(this.value)">
+            <span id="dateError" class="error" style="display: none;">Invalid date format.</span>
+        </form>
+
+        <h2>Item, Quantity, Price per Unit</h2>
+        <form id="dynamicForm">
+            <div class="form-item">
+                <label for="item1">Item 1:</label><br>
+                <input type="text" id="item1" name="item[]" placeholder="Item name" maxlength="32" required>
+                <input type="number" id="quantity1" name="quantity[]" placeholder="Quantity" min="1" oninput="calculateTotal(1)">
+                <input type="number" id="cost1" name="cost[]" placeholder="Price per unit" min="0.01" step="0.01" oninput="calculateTotal(1)">
+                <br><span id="total1" class="total-price">Total: 0.00</span>
+            </div>
+        </form>
+
+        <h3>Grand Total: <span id="grandTotal">0.00</span></h3>
+
+        <button type="button" onclick="addItem()">Add More Item</button>
+        <button type="button" onclick="removeItem()" class="button-remove">Remove Item</button>
+        <button type="button" onclick="GeneratePDF()" class="button-PDF">Generate PDF</button>
+        <p class="error" id="errorMsg">Maximum of 11 items allowed.</p>
+        <!--<p>Testing by adam</p>-->
+
+        <!-- Fill up excel upload and button
+        <input type="file" id="templateFile" accept=".xlsx" required>
+        <input type="button" value="Fill Excel" onclick="fillExcel()">
+        -->
+
+    </div>
+
+    <script>
+        let itemCount = 1;
+        const maxItems = 11;
+
+        function addItem() {
+            if (itemCount < maxItems) {
+                itemCount++;
+                const form = document.getElementById('dynamicForm');
+                const newItem = document.createElement('div');
+                newItem.classList.add('form-item');
+                newItem.innerHTML = `
+                    <label for="item${itemCount}">Item ${itemCount}:</label><br>
+                    <input type="text" id="item${itemCount}" name="item[]" placeholder="Item name" maxlength="32">
+                    <input type="number" id="quantity${itemCount}" name="quantity[]" placeholder="Quantity" min="1" oninput="calculateTotal(${itemCount})">
+                    <input type="number" id="cost${itemCount}" name="cost[]" placeholder="Price per unit" min="0.01" step="0.01" oninput="calculateTotal(${itemCount})">
+                    <br><span id="total${itemCount}" class="total-price">Total: 0.00</span>
+                `;
+                form.appendChild(newItem);
+            } else {
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+
+        function removeItem() {
+            if (itemCount > 1) {
+                const form = document.getElementById('dynamicForm');
+                form.removeChild(form.lastElementChild);
+                itemCount--;
+                updateItemLabels(); // Update item labels dynamically
+                calculateGrandTotal();
+            }
+            else {
+                alert("At least one item is required.");
+            }
+        }
+
+        function updateItemLabels() {
+            for (let i = 1; i <= itemCount; i++) {
+                document.querySelector(`label[for=item${i}]`).innerText = `Item ${i}:`;
+            }
+        }
+
+        //function calculateTotal(itemNum) {
+        //    const quantity = document.getElementById(`quantity${itemNum}`).value || 0;
+        //    const cost = document.getElementById(`cost${itemNum}`).value || '0.00';
+        //    const total = quantity * cost;
+        //    document.getElementById(`total${itemNum}`).innerText = `Total: ${total.toFixed(2)}`;
+        //    calculateGrandTotal();
+        //}
+
+        function calculateTotal(itemNum) {
+            const quantity = parseFloat(document.getElementById(`quantity${itemNum}`).value) || 0; // Convert to number
+            const cost = parseFloat(document.getElementById(`cost${itemNum}`).value) || 0; // Convert to number
+            const formattedCost = cost.toFixed(2); // Format cost to .00
+            const total = (quantity * cost).toFixed(2); // Format total to .00
+
+            document.getElementById(`cost${itemNum}`).innerText = `${formattedCost}`; //cost
+            document.getElementById(`total${itemNum}`).innerText = `Total: ${total}`; //total
+            calculateGrandTotal();
+        }
+
+
+        //function calculateGrandTotal() {
+        //    let grandTotal = 0;
+        //    for (let i = 1; i <= itemCount; i++) {
+        //        const quantity = document.getElementById(`quantity${i}`).value || 0;
+        //        const cost = document.getElementById(`cost${i}`).value || 0;
+        //        grandTotal += quantity * cost;
+        //    }
+        //    document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
+        //}
+
+        function calculateGrandTotal() {
+            let grandTotal = 0;
+            for (let i = 1; i <= itemCount; i++) {
+                const quantity = parseFloat(document.getElementById(`quantity${i}`).value) || 0; // Convert to number
+                const cost = parseFloat(document.getElementById(`cost${i}`).value) || 0; // Convert to number
+                grandTotal += quantity * cost;
+            }
+            document.getElementById('grandTotal').innerText = `${grandTotal.toFixed(2)}`; // Format grand total to .00
+        }
+
+
+        function validateEmail(email) {
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return regex.test(email);
+        }
+
+        function validateDate(dateString) {
+            const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/(20[0-9]{2})$/;
+            const errorMessage = document.getElementById('dateError');
+
+        if (!regex.test(dateString)) {
+            errorMessage.style.display = 'inline';
+            return false; // Invalid format
+        }
+
+        const [day, month, year] = dateString.split('/').map(Number);
+        const dateObject = new Date(year, month - 1, day);
+
+        if (dateObject.getFullYear() === year && dateObject.getMonth() === month - 1 && dateObject.getDate() === day) {
+            errorMessage.style.display = 'none'; // Hide error
+            return true; // Valid date
+        } else {
+            errorMessage.style.display = 'inline'; // Show error
+            return false; // Invalid date
+        }
+        }
+        ///////////////////////////////////////////////////////////////////////////////
+        //Generate PDF
+        async function GeneratePDF() {
+
+            // Get values from form fields
+            const POName = document.getElementById("POName").value;
+            const VendorName = document.getElementById("VendorName").value;
+            const address1 = document.getElementById("address1").value;
+            const address2 = document.getElementById("address2").value;
+            const address3 = document.getElementById("address3").value;
+            const vendorphone = document.getElementById("VendorPhone").value;
+            const vendoremail = document.getElementById("VendorEmail").value;
+            const serialnum = document.getElementById("serialnum").value;
+            const datePO = document.getElementById("datePO").value;
+            const grandTotal = document.getElementById("grandTotal").innerText;
+
+            // PDF generation code
+            const { PDFDocument, rgb } = PDFLib;
+            const pdfDoc = await PDFDocument.create();
+            const page = pdfDoc.addPage([612, 792]);
+
+            // Define form fields and their positions
+            const fields = [
+                { label: 'Vendor Name:', value: VendorName, x: 85.04, y: 609.45 },
+                { label: 'Vendor Address 1:', value: address1, x: 85.04, y: 594.45 },
+                { label: 'Vendor Address 2:', value: address2, x: 85.04, y: 579.45 },
+                { label: 'Vendor Address 3:', value: address3, x: 85.04, y: 564.45 },
+                { label: 'Vendor Phone:', value: vendorphone, x: 85.04, y: 549.45 },
+                { label: 'Vendor Email:', value: vendoremail, x: 85.04, y: 534.45 },
+                { label: 'Serial No:', value: serialnum, x: 433.70, y: 609.45 },
+                { label: 'Date:', value: datePO, x: 411.02, y: 530.08 },
+                { label: 'PO Title:', value: POName, x: 377.01, y: 36.85 },
+                { label: 'Grand Total:', value: grandTotal, x: 453.54, y: 79.37 },
+                { label: 'Requested By', value: 'RASODIN', x: 124.73, y: 73.70 },
+            ];
+
+            // Initial yPosition for items
+            let yPosition = 464.88;
+
+            // Define fixed positions for custom spacing
+            const itemNumPosition = 51.42;   // Starting position for item number
+            const itemNamePosition = 85.04;  // Starting position for item name
+            const quantityPosition = 311.81; // Right-aligned starting position for quantity
+            const costPosition = 382.68;     // Right-aligned starting position for cost
+            const totalPosition = 453.54;    // Right-aligned starting position for total
+
+            // Adjust yPosition for each item dynamically
+
+            for (let i = 1; i <= itemCount; i++) {
+                const itemName = document.getElementById(`item${i}`).value || '';
+                const quantity = parseFloat(document.getElementById(`quantity${i}`).value) || 0; // Convert to number
+                const cost = parseFloat(document.getElementById(`cost${i}`).value) || 0; // Convert to number
+                const formattedCost = cost.toFixed(2); // Format cost to .00
+                const total = (quantity * cost).toFixed(2); // Format total to .00
+
+            // Draw item number and name
+
+            page.drawText(i.toString(), { x: itemNumPosition, y: yPosition, size: 11, color: rgb(0, 0, 0) });
+            page.drawText(itemName, { x: itemNamePosition, y: yPosition, size: 11, color: rgb(0, 0, 0) });
+
+            // Draw quantity, cost, and total (right-aligned)
+
+            page.drawText(quantity.toString(), { x: quantityPosition, y: yPosition, size: 11, color: rgb(0, 0, 0) });
+            page.drawText(`${formattedCost}`, { x: costPosition, y: yPosition, size: 11, color: rgb(0, 0, 0) }); // Format cost to .00
+            page.drawText(`${total}`, { x: totalPosition, y: yPosition, size: 11, color: rgb(0, 0, 0) }); // Format total to .00
+
+
+            // Decrease yPosition for the next item
+                yPosition -= 10; // Adjust this value as necessary for spacing between items
+                }
+
+            // Add text fields to the PDF page
+            fields.forEach(field => {
+                page.drawText(`${field.value}`, {
+                    x: field.x,
+                    y: field.y,
+                    size: 12,
+                    color: rgb(0, 0, 0),
+                });
+            });
+
+            // Save the PDF document
+            const pdfBytes = await pdfDoc.save();
+
+            // Create a Blob from the PDF bytes and open in a new tab
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }
+
+        ///////////////////////////////////////////////////////////////////////////////
+        //Fill in Excel //close!!!
+        async function fillExcel() {
+            const templateFile = document.getElementById("templateFile").files[0];
+            const POName = document.getElementById("POName").value;
+            const VendorName = document.getElementById("VendorName").value;
+            const address1 = document.getElementById("address1").value;
+            const address2 = document.getElementById("address2").value;
+            const address3 = document.getElementById("address3").value;
+            const serialnum = document.getElementById("serialnum").value;
+            const datePO = document.getElementById("datePO").value;
+
+            if (!templateFile) {
+                alert("Please upload your Excel template.");
+                return;
+            }
+
+            const data = await templateFile.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            const sheetName = workbook.SheetNames[0]; // Use first sheet
+            const worksheet = workbook.Sheets[sheetName];
+
+            // Fill basic information in the Excel
+            XLSX.utils.sheet_add_aoa(worksheet, [[POName]], { origin: "B4" });
+            XLSX.utils.sheet_add_aoa(worksheet, [[VendorName]], { origin: "B15" });
+            XLSX.utils.sheet_add_aoa(worksheet, [[address1]], { origin: "B16" });
+            XLSX.utils.sheet_add_aoa(worksheet, [[address2]], { origin: "B17" });
+            XLSX.utils.sheet_add_aoa(worksheet, [[address3]], { origin: "B18" });
+            XLSX.utils.sheet_add_aoa(worksheet, [[serialnum]], { origin: "H14" });
+            XLSX.utils.sheet_add_aoa(worksheet, [[datePO]], { origin: "H18" }); // Fill Date at A10
+
+            // Fill items and their totals in the Excel
+            for (let i = 1; i <= itemCount; i++) {
+                const item = document.getElementById(`item${i}`).value || '';
+                const quantity = document.getElementById(`quantity${i}`).value || 0;
+                const cost = document.getElementById(`cost${i}`).value || 0;
+                const total = quantity * cost;
+
+                XLSX.utils.sheet_add_aoa(worksheet, [[item, quantity, cost, total]], { origin: `A${i + 12}` }); // Start filling from row 12
+            }
+
+            // Add grand total to the Excel as a value
+            const grandTotal = document.getElementById('grandTotal').innerText || 0;
+            XLSX.utils.sheet_add_aoa(worksheet, [[, , "Grand Total:", grandTotal]], { origin: `C${itemCount + 12}` }); // Grand Total at column D
+
+            // Save the filled Excel
+            const newWorkbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(newWorkbook, worksheet, sheetName);
+            XLSX.writeFile(newWorkbook, "Filled_PO.xlsx");
+        }
+        ///////////////////////////////////////////////////////////////////////////////
+    </script>
+</body>
+</html>
