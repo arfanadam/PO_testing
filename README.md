@@ -2,7 +2,7 @@ Dear All,
 
 This webpage for Purchase Order PDF generate. The traditional concept via excel spreadsheet and right now can used this webpage to print out PO via PDF
 
-Here link: https://arfanadam.github.io/PO_testing_V1.1/
+Here link: https://arfanadam.github.io/PO_testing/
 
 next plan:
 1. Sub-Item
