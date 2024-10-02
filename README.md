@@ -5,7 +5,7 @@ This webpage for Purchase Order PDF generate. The traditional concept via excel 
 Here link: https://arfanadam.github.io/PO_testing/
 
 next plan:
-1. Sub-Item
+1. Sub-Item - Done
 2. Preview PO
 3. Database (for PO system, next level management system for user manage their PO)
 4. Right-alligment (next do plan B - next finish database requirement)
