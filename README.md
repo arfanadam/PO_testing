@@ -12,7 +12,7 @@ next plan:
 
 Thank you.
 
-(UPDATE)
+(UPDATE, 7 October 2024)
 Next Version will launch next week.
 Stay Tuned.
 
