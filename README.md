@@ -12,6 +12,10 @@ next plan:
 
 Thank you.
 
+(UPDATE)
+Next Version will launch next week.
+Stay Tuned.
+
 Best Regards,
 Adam
 APU
