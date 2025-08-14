@@ -191,6 +191,37 @@
         let itemCount = 1;
         const maxItems = 11;
 
+        // PDF layout configuration
+        const PDF_LAYOUT = {
+            pageSize: [612, 792],
+            itemStartY: 464.88,
+            pageThreshold: 100,
+            fields: {
+                vendorName: { x: 85.04, y: 609.45 },
+                vendorAddress1: { x: 85.04, y: 594.45 },
+                vendorAddress2: { x: 85.04, y: 579.45 },
+                vendorAddress3: { x: 85.04, y: 564.45 },
+                vendorPhone: { x: 85.04, y: 549.45 },
+                vendorEmail: { x: 85.04, y: 534.45 },
+                serialNo: { x: 433.70, y: 609.45 },
+                date: { x: 411.02, y: 530.08 },
+                poTitle: { x: 377.01, y: 36.85 },
+                grandTotal: { x: 453.54, y: 79.37 },
+                requestedBy: { x: 124.73, y: 73.70 }
+            },
+            itemPositions: {
+                number: 51.42,
+                name: 85.04,
+                quantity: 311.81,
+                cost: 382.68,
+                total: 453.54
+            },
+            spacing: {
+                item: 20,
+                detail: 10
+            }
+        };
+
         function addItem() {
         if (itemCount < maxItems) {
                 itemCount++;
@@ -338,32 +369,29 @@
             // PDF generation code
             const { PDFDocument, rgb } = PDFLib;
             const pdfDoc = await PDFDocument.create();
-            const page = pdfDoc.addPage([612, 792]);
+            let page = pdfDoc.addPage(PDF_LAYOUT.pageSize);
+            const firstPage = page;
 
             // Define form fields and their positions
             const fields = [
-                { label: 'Vendor Name:', value: VendorName, x: 85.04, y: 609.45 },
-                { label: 'Vendor Address 1:', value: address1, x: 85.04, y: 594.45 },
-                { label: 'Vendor Address 2:', value: address2, x: 85.04, y: 579.45 },
-                { label: 'Vendor Address 3:', value: address3, x: 85.04, y: 564.45 },
-                { label: 'Vendor Phone:', value: vendorphone, x: 85.04, y: 549.45 },
-                { label: 'Vendor Email:', value: vendoremail, x: 85.04, y: 534.45 },
-                { label: 'Serial No:', value: serialnum, x: 433.70, y: 609.45 },
-                { label: 'Date:', value: datePO, x: 411.02, y: 530.08 },
-                { label: 'PO Title:', value: POName, x: 377.01, y: 36.85 },
-                { label: 'Grand Total:', value: grandTotal, x: 453.54, y: 79.37 },
-                { label: 'Requested By', value: 'RASODIN', x: 124.73, y: 73.70 },
+                { label: 'Vendor Name:', value: VendorName, ...PDF_LAYOUT.fields.vendorName },
+                { label: 'Vendor Address 1:', value: address1, ...PDF_LAYOUT.fields.vendorAddress1 },
+                { label: 'Vendor Address 2:', value: address2, ...PDF_LAYOUT.fields.vendorAddress2 },
+                { label: 'Vendor Address 3:', value: address3, ...PDF_LAYOUT.fields.vendorAddress3 },
+                { label: 'Vendor Phone:', value: vendorphone, ...PDF_LAYOUT.fields.vendorPhone },
+                { label: 'Vendor Email:', value: vendoremail, ...PDF_LAYOUT.fields.vendorEmail },
+                { label: 'Serial No:', value: serialnum, ...PDF_LAYOUT.fields.serialNo },
+                { label: 'Date:', value: datePO, ...PDF_LAYOUT.fields.date },
+                { label: 'PO Title:', value: POName, ...PDF_LAYOUT.fields.poTitle },
+                { label: 'Grand Total:', value: grandTotal, ...PDF_LAYOUT.fields.grandTotal },
+                { label: 'Requested By', value: 'RASODIN', ...PDF_LAYOUT.fields.requestedBy },
             ];
 
             // Initial yPosition for items
-            let yPosition = 464.88;
+            let yPosition = PDF_LAYOUT.itemStartY;
 
             // Define fixed positions for custom spacing
-            const itemNumPosition = 51.42;   // Starting position for item number
-            const itemNamePosition = 85.04;  // Starting position for item name
-            const quantityPosition = 311.81; // Right-aligned starting position for quantity
-            const costPosition = 382.68;     // Right-aligned starting position for cost
-            const totalPosition = 453.54;    // Right-aligned starting position for total
+            const { number: itemNumPosition, name: itemNamePosition, quantity: quantityPosition, cost: costPosition, total: totalPosition } = PDF_LAYOUT.itemPositions;
 
             // Adjust yPosition for each item dynamically
 
@@ -389,26 +417,30 @@
             // Add item details
             const detailsContainer = document.getElementById(`details-container${i}`);
             const detailInputs = detailsContainer.getElementsByTagName('input');
-            let detailYPosition = yPosition - 10; // Adjust position for details
+            let detailYPosition = yPosition - PDF_LAYOUT.spacing.detail; // Adjust position for details
 
             // Calculate the height needed for the details
-            let detailHeight = detailInputs.length * 10; // Assuming each detail takes 10 units of height
+            let detailHeight = detailInputs.length * PDF_LAYOUT.spacing.detail; // Each detail takes fixed height
 
                 for (let j = 0; j < detailInputs.length; j++) {
                     const detail = detailInputs[j].value || '';
                 if (detail) {
                     page.drawText(`${detail}`, { x: itemNamePosition, y: detailYPosition, size: 10, color: rgb(0, 0, 0) });
-                    detailYPosition -= 10; // Adjust for each detail
+                    detailYPosition -= PDF_LAYOUT.spacing.detail; // Adjust for each detail
                 }
             }
 
             // Decrease yPosition for the next item
-            yPosition -= (20 + detailHeight); // Adjust this value as necessary for spacing between items
+            yPosition -= (PDF_LAYOUT.spacing.item + detailHeight); // Adjust spacing between items
+            if (yPosition < PDF_LAYOUT.pageThreshold && i !== itemCount) {
+                page = pdfDoc.addPage(PDF_LAYOUT.pageSize);
+                yPosition = PDF_LAYOUT.itemStartY;
+            }
             }
 
             // Add text fields to the PDF page
             fields.forEach(field => {
-                page.drawText(`${field.value}`, {
+                firstPage.drawText(`${field.value}`, {
                     x: field.x,
                     y: field.y,
                     size: 12,
