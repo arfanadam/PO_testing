@@ -460,15 +460,15 @@
             // Fill items and their totals in the Excel
             for (let i = 1; i <= itemCount; i++) {
                 const item = document.getElementById(`item${i}`).value || '';
-                const quantity = document.getElementById(`quantity${i}`).value || 0;
-                const cost = document.getElementById(`cost${i}`).value || 0;
+                const quantity = parseInt(document.getElementById(`quantity${i}`).value) || 0;
+                const cost = parseFloat(document.getElementById(`cost${i}`).value) || 0;
                 const total = quantity * cost;
 
                 XLSX.utils.sheet_add_aoa(worksheet, [[item, quantity, cost, total]], { origin: `A${i + 12}` }); // Start filling from row 12
             }
 
             // Add grand total to the Excel as a value
-            const grandTotal = document.getElementById('grandTotal').innerText || 0;
+            const grandTotal = parseFloat(document.getElementById('grandTotal').innerText) || 0;
             XLSX.utils.sheet_add_aoa(worksheet, [[, , "Grand Total:", grandTotal]], { origin: `C${itemCount + 12}` }); // Grand Total at column D
 
             // Save the filled Excel
