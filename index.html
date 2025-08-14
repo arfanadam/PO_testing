@@ -192,7 +192,8 @@
         const maxItems = 11;
 
         function addItem() {
-        if (itemCount < maxItems) {
+            if (itemCount < maxItems) {
+                document.getElementById('errorMsg').style.display = 'none';
                 itemCount++;
                 const form = document.getElementById('dynamicForm');
                 const newItem = document.createElement('div');
@@ -207,8 +208,7 @@
                     <button type="button" onclick="addDetail(${itemCount})" class="button-addDetails">+</button>
                     `;
                 form.appendChild(newItem);
-            } 
-            else {
+            } else {
                 document.getElementById('errorMsg').style.display = 'block';
             }
         }
@@ -221,8 +221,10 @@
                 itemCount--;
                 updateItemLabels(); // Update item labels dynamically
                 calculateGrandTotal();
-            }
-            else {
+                if (itemCount < maxItems) {
+                    document.getElementById('errorMsg').style.display = 'none';
+                }
+            } else {
                 alert("At least one item is required.");
             }
         }
