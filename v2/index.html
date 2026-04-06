@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Purchase Order Form - Generate professional PO documents as PDF">
+    <title>Purchase Order Form v2.0</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <h1>Purchase Order Form <span class="badge">v2.0</span></h1>
+        </header>
+
+        <!-- Main Form Container -->
+        <main class="form-container">
+            <!-- Vendor Information Section -->
+            <section class="form-section" aria-label="Vendor Information">
+                <h2>Vendor Information</h2>
+                
+                <div class="form-group">
+                    <label for="POName">PO Title <span class="required">*</span></label>
+                    <input type="text" id="POName" name="POName" placeholder="Enter purchase order title" required aria-required="true">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="VendorName">Vendor Name <span class="required">*</span></label>
+                        <input type="text" id="VendorName" name="VendorName" placeholder="Company name" required aria-required="true">
+                    </div>
+                    <div class="form-group">
+                        <label for="serialnum">Serial Number</label>
+                        <input type="text" id="serialnum" name="serialnum" placeholder="PO Serial Number">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="VendorPhone">Vendor Phone <span class="required">*</span></label>
+                        <input type="tel" id="VendorPhone" name="VendorPhone" placeholder="+60 12-345 6789" required aria-required="true">
+                    </div>
+                    <div class="form-group">
+                        <label for="VendorFax">Vendor FAX</label>
+                        <input type="tel" id="VendorFax" name="VendorFax" placeholder="Fax number">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="VendorEmail">Vendor Email</label>
+                    <input type="email" id="VendorEmail" name="VendorEmail" placeholder="vendor@example.com" aria-describedby="emailError">
+                    <div id="emailError" class="error-message" role="alert">Please enter a valid email address</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="address1">Vendor Address Line 1 <span class="required">*</span></label>
+                    <input type="text" id="address1" name="address1" placeholder="Street address" required aria-required="true">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="address2">Vendor Address Line 2</label>
+                        <input type="text" id="address2" name="address2" placeholder="Apartment, suite, etc.">
+                    </div>
+                    <div class="form-group">
+                        <label for="address3">Vendor Address Line 3</label>
+                        <input type="text" id="address3" name="address3" placeholder="City, state, zip">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="datePO">Date (DD/MM/YYYY)</label>
+                    <input type="text" id="datePO" name="datePO" placeholder="DD/MM/YYYY" aria-describedby="dateError">
+                    <div id="dateError" class="error-message" role="alert">Please enter a valid date in DD/MM/YYYY format</div>
+                </div>
+            </section>
+
+            <!-- Items Section -->
+            <section class="form-section" aria-label="Order Items">
+                <div class="toolbar">
+                    <h2>Order Items</h2>
+                    <span class="badge" id="itemCounter">1/11 items</span>
+                </div>
+                
+                <div id="itemsContainer">
+                    <!-- Items will be dynamically added here -->
+                </div>
+
+                <div id="maxItemsError" class="error-message" role="alert">
+                    Maximum of 11 items allowed.
+                </div>
+            </section>
+
+            <!-- Grand Total -->
+            <div class="grand-total">
+                <h3>Grand Total: <span id="grandTotal">0.00</span></h3>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="button-group no-print">
+                <button type="button" onclick="app.addItem()" class="btn-primary" aria-label="Add new item">
+                    + Add Item
+                </button>
+                <button type="button" onclick="app.removeItem()" class="btn-danger" aria-label="Remove last item">
+                    − Remove Item
+                </button>
+                <button type="button" onclick="app.previewPO()" class="btn-warning" aria-label="Preview purchase order">
+                    👁 Preview
+                </button>
+                <button type="button" onclick="app.generatePDF()" class="btn-success" aria-label="Generate PDF document">
+                    📄 Generate PDF
+                </button>
+            </div>
+
+            <!-- Secondary Actions -->
+            <div class="button-group no-print" style="margin-top: 10px;">
+                <button type="button" onclick="app.saveDraft()" class="btn-primary btn-sm" aria-label="Save draft locally">
+                    💾 Save Draft
+                </button>
+                <button type="button" onclick="app.loadDraft()" class="btn-primary btn-sm" aria-label="Load saved draft">
+                    📂 Load Draft
+                </button>
+                <button type="button" onclick="app.clearForm()" class="btn-danger btn-sm" aria-label="Clear all form data">
+                    🗑 Clear Form
+                </button>
+                <button type="button" onclick="app.exportExcel()" class="btn-success btn-sm" aria-label="Export to Excel">
+                    📊 Export Excel
+                </button>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="text-center text-muted mt-lg">
+            <p>Purchase Order Form v2.0 &copy; 2024</p>
+        </footer>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal-overlay" id="previewModal" role="dialog" aria-labelledby="previewTitle" aria-modal="true">
+        <div class="modal-content">
+            <button class="modal-close" onclick="app.closePreview()" aria-label="Close preview">&times;</button>
+            <h2 id="previewTitle">Purchase Order Preview</h2>
+            <div id="previewContent">
+                <!-- Preview content will be generated here -->
+            </div>
+            <div class="button-group" style="margin-top: 20px;">
+                <button type="button" onclick="app.closePreview()" class="btn-primary">Close</button>
+                <button type="button" onclick="app.generatePDF(); app.closePreview();" class="btn-success">Generate PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <!-- Custom JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>
