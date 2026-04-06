@@ -133,13 +133,13 @@
             <input type="text" id="VendorName" name="VendorName" required><br><br>
 
             <label for="VendorPhone">Vendor Phone: (required)</label><br>
-            <input type="text" id="VendorPhone" name="VendorPhone" required><br><br>
+            <input type="tel" id="VendorPhone" name="VendorPhone" required><br><br>
 
             <label for="VendorFax">Vendor FAX:</label><br>
-            <input type="text" id="VendorFax" name="VendorFax" required><br><br>
+            <input type="tel" id="VendorFax" name="VendorFax" required><br><br>
 
             <label for="VendorEmail">Vendor Email:</label><br>
-            <input type="text" id="VendorEmail" name="VendorEmail" required onblur="if (!validateEmail(this.value)) alert('Invalid email format.')">
+            <input type="email" id="VendorEmail" name="VendorEmail" required><br><br>
 
             <label for="address1">Vendor Address 1: (required)</label><br>
             <input type="text" id="address1" name="address1" required><br><br>
@@ -153,9 +153,8 @@
             <label for="serialnum">Serial No.:</label><br>
             <input type="text" id="serialnum" name="serialnum"><br><br>
 
-            <label for="datePO">Date (DD/MM/YYYY):</label><br>
-            <input type="text" id="datePO" name="datePO" onblur="validateDate(this.value)">
-            <span id="dateError" class="error" style="display: none;">Invalid date format.</span>
+            <label for="datePO">Date:</label><br>
+            <input type="date" id="datePO" name="datePO"><br><br>
         </form>
 
         <h2>Item, Quantity, Price per Unit</h2>
@@ -294,31 +293,7 @@
         }
 
 
-        function validateEmail(email) {
-            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return regex.test(email);
-        }
-
-        function validateDate(dateString) {
-            const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/(20[0-9]{2})$/;
-            const errorMessage = document.getElementById('dateError');
-
-        if (!regex.test(dateString)) {
-            errorMessage.style.display = 'inline';
-            return false; // Invalid format
-        }
-
-        const [day, month, year] = dateString.split('/').map(Number);
-        const dateObject = new Date(year, month - 1, day);
-
-        if (dateObject.getFullYear() === year && dateObject.getMonth() === month - 1 && dateObject.getDate() === day) {
-            errorMessage.style.display = 'none'; // Hide error
-            return true; // Valid date
-        } else {
-            errorMessage.style.display = 'inline'; // Show error
-            return false; // Invalid date
-        }
-        }
+        // Removed manual email and date validation in favor of HTML input types.
         ///////////////////////////////////////////////////////////////////////////////
         //Generate PDF
         async function GeneratePDF() {
