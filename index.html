@@ -263,12 +263,13 @@
 
         function calculateTotal(itemNum) {
             const quantity = parseFloat(document.getElementById(`quantity${itemNum}`).value) || 0; // Convert to number
-            const cost = parseFloat(document.getElementById(`cost${itemNum}`).value) || 0; // Convert to number
+            const costInput = document.getElementById(`cost${itemNum}`); // Reference to cost input field
+            const cost = parseFloat(costInput.value) || 0; // Convert to number
             const formattedCost = cost.toFixed(2); // Format cost to .00
             const total = (quantity * cost).toFixed(2); // Format total to .00
 
-            document.getElementById(`cost${itemNum}`).innerText = `${formattedCost}`; //cost
-            document.getElementById(`total${itemNum}`).innerText = `Total: ${total}`; //total
+            costInput.value = formattedCost; // cost
+            document.getElementById(`total${itemNum}`).innerText = `Total: ${total}`; // total
             calculateGrandTotal();
         }
 
